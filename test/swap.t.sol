@@ -201,7 +201,63 @@ function testStableSwap() public {
 
    assertEq(Telcoin.balanceOf(receiver) , 18);
    assertEq(eUSDC.balanceOf(holder) , 0);
-//    assertEq(ERC20(address(eUSDT)).balanceOf(address(this)), 0);
+ //    assertEq(ERC20(address(eUSDT)).balanceOf(address(this)), 0);
+
+}
+
+function testStableSwapOriginNot() public {
+    eUSDC.mintTo(holder, 100);
+    eUSDS.mintTo(receiver, 100);
+
+    eUSDS.mintTo(holder, 100);
+    StablecoinSwap memory stableInputs =  StablecoinSwap({
+       destination: holder,
+       origin: address(eUSDS),
+       oAmount: 100,
+       target: address(eUSDC),
+       tAmount: 10
+   });
+
+
+   DefiSwap memory defiSwap = DefiSwap({
+       aggregator: address(this),
+       plugin: ISimplePlugin(address(testPlugin)),
+       feeToken:  ERC20(address(eUSDT)),
+       referrer: address(receiver),
+       referralFee: 2,
+       walletData:  bytes(wallet.getTestSelector()),
+       swapData: bytes(wallet.getTestSelector())
+   });
+
+
+   vm.startPrank(address(holder));
+   Telcoin.mintTo(receiver, 10);
+
+    eUSDC.approve(address(amirx), 10);
+    eUSDS.approve(address(amirx), 100);
+    Telcoin.approve(address(amirx) , 2);
+    // eUSDS.approve(address(this), 100);
+   vm.stopPrank();
+
+
+
+
+   Telcoin.mintTo(receiver, 10);
+
+   vm.startPrank(address(receiver));
+   eUSDS.approve(address(amirx), 100);
+   Telcoin.approve(address(amirx) , 2);
+
+   vm.stopPrank();
+
+    amirx.stablecoinSwap(address(holder), address(receiver), stableInputs, defiSwap);
+
+   assertEq(eUSDS.balanceOf(holder) , 0);
+   assertEq(eUSDS.balanceOf(receiver) , 200);
+
+   assertEq(Telcoin.balanceOf(receiver) , 18);
+   assertEq(eUSDC.balanceOf(holder) , 110);
+   assertEq(ERC20(address(eUSDT)).balanceOf(address(this)), 0);
 
 }
 
